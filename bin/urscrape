@@ -1,82 +1,75 @@
-#!/usr/bin/python3
-# -*-python-*-
+#!/usr/bin/python
+# -*- python -*-
 '''
-Copyright 2014 Pham Urwen
+Copyright 2012,2013 Ur
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+This program USES DATA from http://thetvdb.com
+PLEASE CONTRIBUTE information and artwork to http://thetvdb.com
 '''
 
-import os
-import sys
-import signal
-import argparse
-import importlib
+import os, sys
+import re, glob, math, argparse, time
+from subprocess import *
+from lxml import etree
+import urllib2, socket, random
 
-# Make sure the urscrape and configuration files are in the path
-bindir = os.path.dirname(os.path.abspath(__file__))
-pbindir = os.path.dirname(bindir)
-if bindir not in sys.path:
-    sys.path.insert(1, bindir)
-if pbindir not in sys.path:
-    sys.path.insert(1, pbindir)
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
-# Import urscrape
-from urscrape import urscrape
-from urscrape import urutil
+socket.setdefaulttimeout(10)
+opener = urllib2.build_opener()
+opener.addheaders = [('User-agent', 'SemanticBot (v0.5beta)')]
 
-parser = urutil.get_parser(description='Spider and Scrape')
-urutil.add_standard_arguments(parser, '1.0')
-parser.add_argument('--local', dest='local_only', action='store_true',
-                    help='Use only local files (no internet)')
-parser.add_argument('--kinds', type=str,
-                    help='comma-separated list of kinds of pages to fetch'
-                    + '(e.g., index, data)')
-parser.add_argument('--delay', dest='delay_range', type=str,
-                    help='Minimum and maximum delay in seconds'
-                    + ' (comma-separated pair)')
-parser.add_argument('config', nargs=1, help='configuration file')
+
+parser = argparse.ArgumentParser(description='Scrape from list')
+parser.add_argument('file', metavar='FILE', type=str, nargs=1,
+                    help='List of urls')
 args = parser.parse_args()
 
-# Import the configuration file
-mod = importlib.import_module(args.config[0])
+urls = []
 
-def signal_handler(sig, frame):
-    global s
-    if sig == signal.SIGINT:
-        s.fatal('Caught SIGINT')
+with open(args.file[0], 'r') as f:
+    for line in f:
+        line = line.strip()
+        urls.append(line)
+
+random.shuffle(urls)
+
+for url in urls:
+    outfile = os.path.basename(url)
+    if os.path.isfile(outfile):
+        print 'HAVE', outfile
+        continue
+    try:
+        result = opener.open(url)
+        got = True
+    except:
+        got = False
+    if got:
+        with open(outfile, 'w') as f:
+            f.write(result.read())
+        print 'GOT', outfile, url
+        waittime = 10 + random.choice(range(5,20))
+        print 'SLEEPING', waittime
+        time.sleep(waittime)
     else:
-        s.fatal('Caught unknown signal {}'.format(sig))
-
-s = mod.Scraper()
-s.loglevel(args.verbose, args.debug)
-
-if args.kinds:
-    args.kinds = args.kinds.split(',')
-
-if args.delay_range:
-    args.delay_range = [int(i) for i in args.delay_range.split(',')]
-
-s.config(local_only=args.local_only,
-         kinds=args.kinds,
-         delay_range=args.delay_range)
-signal.signal(signal.SIGINT, signal_handler)
-s._scrape()
-s.info('Scraping complete, terminating')
-sys.exit(0)
-
+        print 'Cannot get %s' % url
