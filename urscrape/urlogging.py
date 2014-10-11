@@ -1,14 +1,3 @@
-<<<<<<< 615b6908ce30ab4bce00847071e2a1f35f403860
-#!/usr/bin/env python3
-# urscrape.py -*-python-*-
-# Copyright 2016 by urwen (urwen@mail.ru)
-# This program comes with ABSOLUTELY NO WARRANTY.
-
-from urscrape.log import *
-
-INFO("urscrape.py")
-
-=======
 #!/usr/bin/python3
 # -*-python-*-
 '''
@@ -34,33 +23,40 @@ SOFTWARE.
 '''
 
 import sys
-import os
-from urscrape import urlogging
+import logging
+import traceback
 
-class UrScrape(urlogging.UrLogging):
+class UrLogging():
     def __init__(self, debug=False, verbose=False):
-        urlogging.UrLogging.__init__(self, debug=debug, verbose=verbose)
+        logging.addLevelName(50, 'FATAL')
+        logging.basicConfig(format='{levelname:1.1} {asctime} {message}',
+                            style='{',
+                            datefmt='%Y%m%d %H%M%S')
+        self.logger = logging.getLogger('ur')
+        self.loglevel(verbose, debug)
 
-    def scrape_(self):
-        try:
-            self.info('Scraping {0}'.format(self.site))
-        except:
-            self.fatal('self.site not set to the root of the site to scrape')
-        self.fetch_(self.site)
+    def loglevel(self, verbose, debug):
+        if verbose:
+            self.logger.setLevel(logging.INFO)
+        elif debug:
+            self.logger.setLevel(logging.DEBUG)
+        else:
+            self.logger.setLevel(logging.WARNING)
 
-    def url2cachefile(self, url):
-        try:
-            dir = self.cachedir
-        except:
-            dir = '.cache'
+    def fatal(self, message, *args, **kwargs):
+        self.logger.critical(message, *args, **kwargs)
+        self.logger.critical('Fatal termination...')
+        sys.exit(-1)
 
-        if url.endswith('.html'):
-            cachefile = os.path.join(dir, 
+    def error(self, message, *args, **kwargs):
+        self.logger.error(message, *args, **kwargs)
 
-    def fetch_(self, url):
-        file = self.url2cachefile(url)
+    def debug(self, message, *args, **kwargs):
+        self.logger.debug(message, *args, **kwargs)
+
+    def info(self, message, *args, **kwargs):
+        self.logger.info(message, *args, **kwargs)
 
 if __name__ == '__main__':
-    us = UrScrape()
-    us.fatal('%s is a library', sys.argv[0])
->>>>>>> Checkpoint
+    ul = UrLogging()
+    ul.fatal('%s is a library', sys.argv[0])
