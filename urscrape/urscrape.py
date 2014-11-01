@@ -38,6 +38,15 @@ from urllib.error import URLError
 from urllib.parse import urlparse
 from urscrape import urhtml
 from urscrape import urlogging
+from urscrape import urhtml
+from urllib import request
+from urllib.error import URLError
+from urllib.parse import urlparse
+import subprocess
+import time
+from collections import deque
+import lxml.html
+import random
 
 class UrScrape(urlogging.UrLogging, urhtml.UrHtml):
     def __init__(self, debug=False, verbose=False):
@@ -89,6 +98,28 @@ class UrScrape(urlogging.UrLogging, urhtml.UrHtml):
     def url_to_descriptor(self, url):
         '''Given a url, return a tuple of the following form:
         (url, kind, parser, parser_args, refetch_seconds)
+=======
+        # defaults
+        self.delay = (9, 11) # seconds of delay
+        self.kinds = None
+
+    def restrict(self, kinds):
+        self.kinds = kinds
+
+    def pathquery2cachefile(self, path, query):
+        basename = os.path.basename(path)
+        if not query:
+            return basename
+        return basename + '_' + query
+
+    def url2cachefile(self, url):
+        _, _, path, params, query, fragment = urlparse(url)
+        return self.pathquery2cachefile(path, query)
+
+    def url_to_descriptor(self, url):
+        '''Given a url, return a tuple of the following form:
+        (kind, parser, refetch_seconds, delay_seconds)
+>>>>>>> Checkpoint
 
         If kind is None, the url will be ignored.
 
@@ -96,11 +127,16 @@ class UrScrape(urlogging.UrLogging, urhtml.UrHtml):
         the page.
 
         '''
+<<<<<<< ca6bad27717f8555e2327c2987c8383130bf94f1
         return (None, None, None, None, self.refetch_seconds)
+=======
+        return (None, None, self.refetch_seconds, self.delay_seconds)
+>>>>>>> Checkpoint
 
     def clean_url(self, url):
         return url
 
+<<<<<<< ca6bad27717f8555e2327c2987c8383130bf94f1
     def add_url(self, url, kind, parser=None, parser_args=None,
                 refetch_seconds=None, delay_range=None):
         if not self.base_url:
@@ -108,28 +144,112 @@ class UrScrape(urlogging.UrLogging, urhtml.UrHtml):
         if kind == None:
             return
         if url == self.prev_url:
+=======
+    def parse(self, tree):
+        return None
+
+    def add_url(self, url, kind, parser=self.href_scan, parser_args=self,
+                refetch_seconds=self.refetch_seconds,
+                delay_range=self.delay_range):
+        if kind == None:
+            return
+        if url = self.prev_url:
+>>>>>>> Checkpoint
             return
         self.prev_url = url
         if url in self.urls_seen:
             self.info('Seen {}: {}'.format(kind, url))
             return
+<<<<<<< ca6bad27717f8555e2327c2987c8383130bf94f1
         if refetch_seconds == None:
             refetch_seconds = self.refetch_seconds
         if delay_range == None:
             delay_range = self.delay_range
+=======
+>>>>>>> Checkpoint
         self.info('{}: {}'.format(kind, url))
         self.queued_count += 1
         self.urls_seen.add(url)
         self.urls.append((url, kind, parser, parser_args,
                           refetch_seconds, delay_range))
+<<<<<<< ca6bad27717f8555e2327c2987c8383130bf94f1
         if not self.queued_count % 100:
             self.info('Shuffling list of urls')
             random.shuffle(self.urls)
 
     def _sleep(self, delay_range, longer=False):
+=======
+
+    def _sleep(self, delay_range, longer=False):
+        delay = random.randrange(delay_range[0], delay_range[1])
+        if longer:
+            delay *= 2
+        self.info('Sleeping {}s'.format(delay))
+        time.sleep(delay)
+
+    def _scrape(self):
+        while True:
+            try:
+                (url, kind, parser, parser_args,
+                 refetch_seconds, delay_range) = self.urls.popleft()
+            except IndexError:
+                url = None
+            if url == None:
+                break
+
+            file = self._fetch(url, refetch_seconds)
+            if not file:
+                if self.local_only or self.index_only or self.data_only:
+                    continue
+                self.info('Unexpected failure')
+                self._sleep(delay_range, longer=True)
+                continue
+
+            if parser:
+                parser(parser_args, file)
+
+    def href_scan(self, file):
+        tree = self._get_tree(file)
+        urls = self._find_urls(tree)
+        for url in urls:
+            self._add_url(url)
+
+        if url_type == self.DATA:
+            self.parse(tree)
+
+
+    def _get_tree(self, file):
+        with open(file, 'rb') as fp:
+            tree = lxml.html.fromstring(fp.read().decode('utf-8'))
+        return tree
+
+    def _find_urls(self, tree):
+        return tree.xpath('//a/@href')
+
+    def _fetch(self, url, url_type):
+        if self.index_only and url_type != self.INDEX:
+            return None
+        if self.data_only and url_type != self.DATA:
+            return None
+
+        if url_type == self.INDEX:
+            refetch_seconds = self.index_time
+        elif url_type == self.DATA:
+            refetch_seconds = self.data_time
+        else:
+            refetch_seconds = 3600
+
+        self.considered_count += 1
+        self.info('Considering {}'.format(url))
+        self.info('queued={} considered={} cached={} fetched={}'.format(
+            self.queued_count, self.considered_count, self.cached_count,
+            self.fetched_count))
+        file = self.url2cachefile(url)
+>>>>>>> Checkpoint
         try:
             delay = random.randrange(delay_range[0], delay_range[1])
         except:
+<<<<<<< ca6bad27717f8555e2327c2987c8383130bf94f1
             delay = delay_range[0]
         if longer:
             delay *= 2

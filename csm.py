@@ -22,15 +22,15 @@ class Scraper(urscrape.UrScrape):
     def url_to_descriptor(self, url):
         basename = os.path.basename(url)
         if basename in [ 'dvd', 'theaters' ]:
-            return (None, None, None, None, None)
+            return (None, None, None, None)
         if 'user-reviews' in url:
-            return (None, None, None, None, None)
+            return (None, None, None, None)
         if 'page=' in url or \
            url.endswith('tv-reviews') or url.endswith('movie-reviews'):
-            return (url, 'index', self.href_scan, self)
+            return ("index", self.parse_index, self)
         if 'movie-reviews/' in url or 'tv-reviews/' in url:
-            return (url, 'data', self.parse, None, self.long_refetch_seconds)
-        return (None, None, None, None, None)
+            return ("data", self.parse_index, self, self.long_refetch_seconds)
+        return (None, None, None, None)
 
     def clean_url(self, url):
         if 'rate=' in url:
@@ -140,6 +140,5 @@ class Scraper(urscrape.UrScrape):
                 if e2.text:
                     genres.append(e2.text)
         print('Genres: {}'.format(genres))
-
 
         sys.exit(1)
