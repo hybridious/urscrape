@@ -31,7 +31,8 @@ class UrLogging():
         logging.addLevelName(50, 'FATAL')
         logging.basicConfig(format='{levelname:1.1} {asctime} {message}',
                             style='{',
-                            datefmt='%Y%m%d %H%M%S')
+                            datefmt='%Y%m%d %H%M%S',
+                            stream=sys.stdout)
         self.logger = logging.getLogger('ur')
         self.loglevel(verbose, debug)
 
@@ -48,8 +49,22 @@ class UrLogging():
         self.logger.critical('Fatal termination...')
         sys.exit(-1)
 
+    def fatal_decode(self, message, *args):
+        ty, va = sys.exc_info()[:2]
+        exc = traceback.format_exception_only(ty, va)
+        self.logger.critical(message, *args)
+        self.logger.critical(exc[0].strip())
+        self.logger.critical('Fatal termination...')
+        sys.exit(-1)
+
     def error(self, message, *args, **kwargs):
         self.logger.error(message, *args, **kwargs)
+
+    def error_decode(self, message, *args):
+        ty, va = sys.exc_info()[:2]
+        exc = traceback.format_exception_only(ty, va)
+        self.logger.error(message, *args)
+        self.logger.error(exc[0].strip())
 
     def debug(self, message, *args, **kwargs):
         self.logger.debug(message, *args, **kwargs)
