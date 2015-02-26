@@ -6,5 +6,3 @@
 import urscrape.main
 import sys
 sys.exit(urscrape.main.main())
-s.scrape()
-s.fatal('Exiting')

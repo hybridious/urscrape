@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
 
+import re
+import html.entities
 from html.parser import HTMLParser
 
 class MLStripper(HTMLParser):
@@ -42,6 +44,28 @@ class UrHtml(object):
         s = MLStripper()
         s.feed(html)
         return s.get_data()
+
+    def decode_htmlentities(self, string, angles=False):
+        def substitute_entity(match):
+            ent = match.group(3)
+            if match.group(1) == "#":
+                # decoding by number
+                if match.group(2) == '':
+                    # number is in decimal
+                    return unichr(int(ent))
+                elif match.group(2) == 'x':
+                    # number is in hex
+                    return unichr(int('0x'+ent, 16))
+            else:
+                if not angles and (ent == 'lt' or ent == 'gt'):
+                    return '&%s;' % ent
+                # they were using a name
+                cp = html.entities.name2codepoint.get(ent)
+                if cp: return chr(cp)
+                else: return match.group()
+        entity_re = re.compile(r'&(#?)(x?)(\w+);')
+        return entity_re.subn(substitute_entity, string)[0]
+
 
 if __name__ == '__main__':
     ul = UrLogging()
