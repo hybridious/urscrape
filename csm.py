@@ -22,15 +22,15 @@ class Scraper(urscrape.UrScrape):
     def url_to_descriptor(self, url):
         basename = os.path.basename(url)
         if basename in [ 'dvd', 'theaters' ]:
-            return (None, None, None, None)
+            return (None, None, None, None, None)
         if 'user-reviews' in url:
-            return (None, None, None, None)
+            return (None, None, None, None, None)
         if 'page=' in url or \
            url.endswith('tv-reviews') or url.endswith('movie-reviews'):
-            return ("index", self.parse_index, self)
+            return (url, 'index', self.href_scan, self)
         if 'movie-reviews/' in url or 'tv-reviews/' in url:
-            return ("data", self.parse_index, self, self.long_refetch_seconds)
-        return (None, None, None, None)
+            return (url, 'data', self.parse, None, self.long_refetch_seconds)
+        return (None, None, None, None, None)
 
     def clean_url(self, url):
         if 'rate=' in url:
@@ -50,6 +50,69 @@ class Scraper(urscrape.UrScrape):
             page = re.sub(r'[^\d]*(\d+)', r'\1', query)
             return kind + '-' + basename + '-' + page
         return kind + '-' + basename + '-' + query
+<<<<<<< 06ac4501aa9fb48842ce862f34614e73a635e67c
+=======
+
+    def add_xpath(self, tree, old_list, tag, xpath, func=None):
+        result = tree.xpath(xpath)
+        if not result:
+            return old_list
+
+        items = []
+        for item in result:
+            items.append(html2text.html2text(item))
+
+        return old_list.append((tag, items))
+
+    def dump_tags(self, tags, format=None):
+        print('<entry>')
+        for key, values in tags:
+            print('  <{}>'.format(key))
+            for value in values:
+                print('    <item>{}</item>'.format(value))
+            print('  </{}>'.format(key))
+        print('</entry>')
+
+    def parse(self, file):
+        tags = []
+        tree = self._get_tree(file)
+
+        self.add_xpath(
+            tree, tags, 'url',
+            "//meta[@property='og:url']/@content")
+
+        self.add_xpath(
+            tree, tags, 'title',
+            "//*[@property='itemReviewed']/meta[@property='name']/@content")
+
+        self.add_xpath(
+            tree, tags, 'rating',
+            "//div[@property='reviewRating']/meta[@property='ratingValue']/@content")
+
+        self.add_xpath(
+            tree, tags, 'review',
+            "//meta[@property='reviewBody']/@content")
+
+        self.add_xpath(
+            tree, tags, 'description',
+            "//meta[@property='description']/@content")
+
+        self.dump_tags(tags)
+
+        actors = tree.xpath("//a[@property='actor']/text()")
+        print('Actors: {}'.format(actors))
+
+        company = tree.xpath(
+            "//*[@property='productionCompany']/meta[@property='name']/@content")
+        print('Company {}'.format(company))
+
+        genres = []
+        for e in tree.cssselect("td:contains('Genre:') + *"):
+            for e2 in e:
+                if e2.text:
+                    genres.append(e2.text)
+        print('Genres: {}'.format(genres))
+>>>>>>> Checkpoint
 
     def add_xpath(self, tree, old_list, tag, xpath, func=None):
         result = tree.xpath(xpath)
