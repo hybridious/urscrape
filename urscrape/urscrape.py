@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*-python-*-
 '''
-Copyright 2014 Pham Urwen
+Copyright 2014,2015 Pham Urwen
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -145,6 +145,9 @@ class UrScrape(urlogging.UrLogging,urhtml.UrHtml):
                 break
 
             file = self._fetch(url, kind, refetch_seconds, delay_range)
+            if file == 0:
+                # Skip
+                continue
             if not file:
                 failures += 1
                 if failures >= 10:
@@ -222,7 +225,7 @@ class UrScrape(urlogging.UrLogging,urhtml.UrHtml):
 
         if use_local:
             self.info('Skipping {0} to {1}'.format(url, file))
-            return None
+            return 0 # Special marker for skips
 
         self.info('Scraping {0} to {1}'.format(url, file))
 

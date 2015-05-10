@@ -8,6 +8,7 @@ from urscrape import urscrape
 class Scraper(urscrape.UrScrape):
     def __init__(self, debug=False, verbose=False):
         urscrape.UrScrape.__init__(self, debug=debug, verbose=verbose)
+        self.cachedir = '/db/csm'
         self.refetch_seconds = 7 * 24 * 3600
         self.long_refetch_seconds = 31 * 24 * 3600
         self.delay_second = [3, 7]
@@ -68,9 +69,38 @@ class Scraper(urscrape.UrScrape):
             print('  </{}>'.format(key))
         print('</entry>')
 
+    def print_text(self, ancestors, node):
+        if isinstance(node.text, str) and node.tag not in ['style',
+                                                           'script']:
+            recent = ancestors[-1]
+            if isinstance(node.tail, str):
+                print('{}: {} {}'.format(recent, node.text.strip(),
+                                         node.tail.strip()))
+            else:
+                print('{}: {}'.format(recent, node.text.strip()))
+        elif node.tag == 'meta':
+            recent = ancestors[-1]
+            print('{}'.format(recent))
+
+        for el in list(node):
+            if isinstance(el.tag, str):
+                desc = el.tag
+                for key, value in el.attrib.iteritems():
+                    desc += '[{}={}]'.format(key, value)
+                self.print_text(ancestors + [ desc ], el)
+
+#            print(el.tag)
+#            if isinstance(el.tag, str) and isinstance(el.text, str):
+##                text = el.text.strip()
+#                if text != '' and el.tag not in ['style', 'script']:
+#                    print('tag={} text={}'.format(el.tag, text))
+
+
     def parse(self, file):
         tags = []
         tree = self._get_tree(file)
+
+        self.print_text([], tree)
 
         self.add_xpath(
             tree, tags, 'url',
