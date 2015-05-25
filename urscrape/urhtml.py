@@ -23,6 +23,7 @@ SOFTWARE.
 '''
 
 import re
+import sys
 import html.entities
 from html.parser import HTMLParser
 

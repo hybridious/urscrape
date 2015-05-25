@@ -22,23 +22,24 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '''
 
-import sys
-import os
 import io
+import lxml.html
+import os
+import random
 import re
-from urscrape import urlogging
-from urscrape import urhtml
+import socket
+import subprocess
+import sys
+import time
+
+from collections import deque
 from urllib import request
 from urllib.error import URLError
 from urllib.parse import urlparse
-import subprocess
-import time
-from collections import deque
-import lxml.html
-import random
-import socket
+from urscrape import urhtml
+from urscrape import urlogging
 
-class UrScrape(urlogging.UrLogging,urhtml.UrHtml):
+class UrScrape(urlogging.UrLogging, urhtml.UrHtml):
     def __init__(self, debug=False, verbose=False):
         urlogging.UrLogging.__init__(self, debug=debug, verbose=verbose)
 
