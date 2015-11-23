@@ -25,32 +25,43 @@ SOFTWARE.
 from urscrape import urhtml
 from urscrape import urlogging
 import re
+import shlex
 
 class UrParse(urlogging.UrLogging, urhtml.UrHtml):
   def __init__(self, debug=False, verbose=False):
     urlogging.UrLogging.__init__(self, debug=debug, verbose=verbose)
     self.rules = []
 
+  def tokenize(self, line):
+    for token in shlex.split(line):
+      yield token
+
   def load(self, rules):
     for line in rules.split('\n'):
       if line and len(line):
         print('LINE={}'.format(line))
-        rule = []
-        for action in line.split(' '):
-          print('ACTION={}'.format(action))
-          if action.endswith('()'):
+
+        for token in self.tokenize(line):
+          print('TOKEN={}'.format(token))
+          if token[0] == '#':
+            break
+
+          rule = []
+          for action in line.split(' '):
+            print('ACTION={}'.format(action))
+            if action.endswith('()'):
+              if re.search(r'=', action):
+                v, f = action.split('=')
+                rule.append(('function-returns', v, f))
+              else:
+                rule.append(('function', action))
+              continue
             if re.search(r'=', action):
-              v, f = action.split('=')
-              rule.append(('function-returns', v, f))
-            else:
-              rule.append(('function', action))
-            continue
-          if re.search(r'=', action):
-            a, v = action.split('=')
-            rule.append(('attribute=', a, v))
-            continue
-          rule.append(('tag', action))
-        self.rules.append(rule)
+              a, v = action.split('=')
+              rule.append(('attribute=', a, v))
+              continue
+            rule.append(('tag', action))
+          self.rules.append(rule)
 
   def print_rules(self):
     for i, rule in enumerate(self.rules):

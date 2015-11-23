@@ -62,7 +62,10 @@ html = '''
 '''
 
 rules = '''
-body div text()
+test: body
+      div
+      text() #get text
+test2: body
 '''
 
 up = urparse.UrParse()

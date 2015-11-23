@@ -65,6 +65,7 @@ class UrScrape(urlogging.UrLogging, urhtml.UrHtml):
         self.headers = None
         self.byte_limit = 0
         self.agent = 'SemanticBot 0.7beta'
+        self.refetch_percent = 10
 
     def config(self, local_only=None, kinds=None, delay_range=None):
         if local_only != None:
@@ -220,9 +221,14 @@ class UrScrape(urlogging.UrLogging, urhtml.UrHtml):
                           .format(file, hours, minutes, seconds))
                 self.cached_count += 1
                 return file
-            else:
+            elif random.randint(0, 100) < self.refetch_percent:
                 self.info('Refetching cached {} {} (age={:02d}:{:02d}:{:02d})'
                           .format(kind, file, hours, minutes, seconds))
+            else:
+                self.info('Not refetching cached {0} (age={1:02d}:{2:02d}:{3:02d})'
+                          .format(file, hours, minutes, seconds))
+                self.cached_count += 1
+                return file
 
         if use_local:
             self.info('Skipping {0} to {1}'.format(url, file))
