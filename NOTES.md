@@ -6,3 +6,4 @@ source bin/activate [or run custom activate]
 
 sudo apt-get install libxml2-dev libxslt-dev
 pip install lxml
+pip install -e .
