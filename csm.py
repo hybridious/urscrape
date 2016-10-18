@@ -11,6 +11,8 @@ class Scraper(urscrape.UrScrape):
         self.cachedir = '/db/csm'
         self.refetch_seconds = 7 * 24 * 3600
         self.long_refetch_seconds = 31 * 24 * 3600
+        self.refetch_percent = 0
+        self.refetch_index_percent = 100
         self.delay_second = [3, 7]
         self.add_url('https://www.commonsensemedia.org/tv-reviews',
                      'index', self.href_scan, self)
@@ -97,6 +99,7 @@ class Scraper(urscrape.UrScrape):
 
 
     def parse(self, file):
+        return # remove to work on parser
         tags = []
         tree = self._get_tree(file)
 

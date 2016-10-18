@@ -66,6 +66,7 @@ class UrScrape(urlogging.UrLogging, urhtml.UrHtml):
         self.byte_limit = 0
         self.agent = 'SemanticBot 0.7beta'
         self.refetch_percent = 10
+        self.refetch_index_percent = 20
 
     def config(self, local_only=None, kinds=None, delay_range=None):
         if local_only != None:
@@ -216,17 +217,18 @@ class UrScrape(urlogging.UrLogging, urhtml.UrHtml):
             hours = int(age // 3600)
             minutes = int((age - hours * 3600) // 60)
             seconds = int(age - hours * 3600 - minutes * 60)
-            if age < refetch_seconds or use_local:
-                self.info('Using cached {0} (age={1:02d}:{2:02d}:{3:02d})'
-                          .format(file, hours, minutes, seconds))
+            if (age < refetch_seconds) or use_local:
+                self.info('Using cached {} {} (age={:02d}:{:02d}:{:02d})'
+                          .format(kind, file, hours, minutes, seconds))
                 self.cached_count += 1
                 return file
-            elif random.randint(0, 100) < self.refetch_percent:
+            elif (kind == 'index' and random.randint(0, 100 < self.refetch_index_percent)) or random.randint(0, 100) < self.refetch_percent:
                 self.info('Refetching cached {} {} (age={:02d}:{:02d}:{:02d})'
                           .format(kind, file, hours, minutes, seconds))
+                os.rename(file, file + '.old')
             else:
-                self.info('Not refetching cached {0} (age={1:02d}:{2:02d}:{3:02d})'
-                          .format(file, hours, minutes, seconds))
+                self.info('Not refetching cached {} {} (age={:02d}:{:02d}:{:02d})'
+                          .format(kind, file, hours, minutes, seconds))
                 self.cached_count += 1
                 return file
 
