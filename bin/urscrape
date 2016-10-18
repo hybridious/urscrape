@@ -1,8 +1,82 @@
-#!/usr/bin/env python3
-# urscrape -*-python-*-
-# Copyright 2016 by urwen (urwen@mail.ru)
-# This program comes with ABSOLUTELY NO WARRANTY.
+#!/usr/bin/python3
+# -*-python-*-
+'''
+Copyright 2014 Pham Urwen
 
-import urscrape.main
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+'''
+
+import os
 import sys
-sys.exit(urscrape.main.main())
+import signal
+import argparse
+import importlib
+
+# Make sure the urscrape and configuration files are in the path
+bindir = os.path.dirname(os.path.abspath(__file__))
+pbindir = os.path.dirname(bindir)
+if bindir not in sys.path:
+    sys.path.insert(1, bindir)
+if pbindir not in sys.path:
+    sys.path.insert(1, pbindir)
+
+# Import urscrape
+from urscrape import urscrape
+from urscrape import urutil
+
+parser = urutil.get_parser(description='Spider and Scrape')
+urutil.add_standard_arguments(parser, '1.0')
+parser.add_argument('--local', dest='local_only', action='store_true',
+                    help='Use only local files (no internet)')
+parser.add_argument('--kinds', type=str,
+                    help='comma-separated list of kinds of pages to fetch'
+                    + '(e.g., index, data)')
+parser.add_argument('--delay', dest='delay_range', type=str,
+                    help='Minimum and maximum delay in seconds'
+                    + ' (comma-separated pair)')
+parser.add_argument('config', nargs=1, help='configuration file')
+args = parser.parse_args()
+
+# Import the configuration file
+mod = importlib.import_module(args.config[0])
+
+def signal_handler(sig, frame):
+    global s
+    if sig == signal.SIGINT:
+        s.fatal('Caught SIGINT')
+    else:
+        s.fatal('Caught unknown signal {}'.format(sig))
+
+s = mod.Scraper()
+s.loglevel(args.verbose, args.debug)
+
+if args.kinds:
+    args.kinds = args.kinds.split(',')
+
+if args.delay_range:
+    args.delay_range = [int(i) for i in args.delay_range.split(',')]
+
+s.config(local_only=args.local_only,
+         kinds=args.kinds,
+         delay_range=args.delay_range)
+signal.signal(signal.SIGINT, signal_handler)
+s._scrape()
+s.info('Scraping complete, terminating')
+sys.exit(0)
+
